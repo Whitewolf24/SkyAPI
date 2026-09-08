@@ -2,7 +2,7 @@
 
 namespace App\Services\OpenSky;
 
-use App\Services\OpenSky\AirplaneNames;
+use App\Services\OpenSky\AirlineNames;
 use App\Services\OpenSky\AirportNames;
 use App\Exceptions\PlaneException;
 use Illuminate\Http\Client\ConnectionException;
@@ -14,26 +14,26 @@ use Carbon\Carbon;
 
 class OpenSkyClient
 {
-    private string $baseUrl;
-    private string $tokenUrl;
-    private ?string $clientId;
-    private ?string $clientSecret;
+    private string $baseurl;
+    private string $tokenurl;
+    private ?string $client_id;
+    private ?string $client_secret;
     private int $timeout;
 
 
-    public function arrivals(string $airportIcao): array
+    public function arrivals(string $airport_code): array
     {
         $end = now('UTC')->startOfDay();
         $begin = $end->copy()->subDay();
 
         $request = Http::timeout($this->timeout);
-        if ($this->clientId && $this->clientSecret) {
-            $request = $request->withToken($this->accessToken());
+        if ($this->client_id && $this->client_secret) {
+            $request = $request->withToken($this->access_token());
         }
 
         try {
-            $response = $request->get("{$this->baseUrl}/flights/arrival", [
-                'airport' => strtoupper($airportIcao),
+            $response = $request->get("{$this->baseurl}/flights/arrival", [
+                'airport' => strtoupper($airport_code),
                 'begin'   => $begin->timestamp,
                 'end'     => $end->timestamp,
             ]);
@@ -43,7 +43,7 @@ class OpenSkyClient
         }
 
         if ($response->status() === 404) {
-            return []; // genuinely "no flights", not a failure
+            return [];
         }
 
         if ($response->failed()) {
@@ -52,16 +52,15 @@ class OpenSkyClient
         }
 
         return collect($response->json() ?? [])
-            ->filter(fn(array $f) => $this->looksCommercial($f['callsign'] ?? null))
+            ->filter(fn(array $f) => $this->commercial_maybe($f['callsign'] ?? null))
             ->map(fn(array $f) => [
                 'icao24'           => $f['icao24'],
                 'callsign'         => trim($f['callsign'] ?? ''),
-                'airline'          => AirplaneNames::nameFor($f['callsign'] ?? null),
+                'airline'          => AirlineNames::nameFor($f['callsign'] ?? null),
                 'departureAirport' => AirportNames::cityFor($f['estDepartureAirport']),
                 'arrivalAirport'   => AirportNames::cityFor($f['estArrivalAirport']),
                 'landedAt'         => isset($f['lastSeen'])
-                    ? Carbon::createFromTimestamp($f['lastSeen'], 'UTC')->toDateTimeString() . ' UTC'
-                    : null,
+                    ? Carbon::createFromTimestamp($f['lastSeen'], 'UTC')->format('d.M.y H:i') . ' UTC'                    : null,
             ])
             ->sortByDesc('landedAt')
             ->values()
@@ -70,30 +69,30 @@ class OpenSkyClient
 
     /////////////
 
-    private function looksCommercial(?string $callsign): bool
+    private function commercial_maybe(?string $callsign): bool
     {
         return $callsign && preg_match('/^[A-Z]{3}\d{1,4}[A-Z]?$/', trim($callsign));
     }
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.opensky.base_url'), '/');
-        $this->tokenUrl = config('services.opensky.token_url');
-        $this->clientId = config('services.opensky.client_id');
-        $this->clientSecret = config('services.opensky.client_secret');
+        $this->baseurl = rtrim(config('services.opensky.base_url'), '/');
+        $this->tokenurl = config('services.opensky.token_url');
+        $this->client_id = config('services.opensky.client_id');
+        $this->client_secret = config('services.opensky.client_secret');
         $this->timeout = (int) config('services.opensky.timeout', 10);
     }
 
-    public function liveStates(?array $bbox = null): array
+    public function live_data(?array $bbox = null): array
     {
         $request = Http::timeout($this->timeout);
 
-        if ($this->clientId && $this->clientSecret) {
-            $request = $request->withToken($this->accessToken());
+        if ($this->client_id && $this->client_secret) {
+            $request = $request->withToken($this->access_token());
         }
 
         try {
-            $response = $request->get("{$this->baseUrl}/states/all", $bbox ?? []);
+            $response = $request->get("{$this->baseurl}/states/all", $bbox ?? []);
         } catch (ConnectionException $e) {
             Log::error('OpenSky connection failed', ['error' => $e->getMessage()]);
             throw new PlaneException("Could not reach OpenSky: {$e->getMessage()}");
@@ -120,14 +119,14 @@ class OpenSkyClient
 
     ///////////////
 
-    private function accessToken(): string
+    private function access_token(): string
     {
         return Cache::remember('opensky_access_token', now()->addMinutes(25), function () {
             try {
-                $response = Http::asForm()->timeout($this->timeout)->post($this->tokenUrl, [
+                $response = Http::asForm()->timeout($this->timeout)->post($this->tokenurl, [
                     'grant_type'    => 'client_credentials',
-                    'client_id'     => $this->clientId,
-                    'client_secret' => $this->clientSecret,
+                    'client_id'     => $this->client_id,
+                    'client_secret' => $this->client_secret,
                 ]);
             } catch (ConnectionException $e) {
                 throw new PlaneException("Could not reach OpenSky auth server: {$e->getMessage()}");
@@ -143,19 +142,19 @@ class OpenSkyClient
 
     /////////////////
 
-    public function departures(string $airportIcao): array
+    public function departures(string $airport_code): array
     {
         $end = now('UTC')->startOfDay();
         $begin = $end->copy()->subDay();
 
         $request = Http::timeout($this->timeout);
-        if ($this->clientId && $this->clientSecret) {
-            $request = $request->withToken($this->accessToken());
+        if ($this->client_id && $this->client_secret) {
+            $request = $request->withToken($this->access_token());
         }
 
         try {
-            $response = $request->get("{$this->baseUrl}/flights/departure", [
-                'airport' => strtoupper($airportIcao),
+            $response = $request->get("{$this->baseurl}/flights/departure", [
+                'airport' => strtoupper($airport_code),
                 'begin'   => $begin->timestamp,
                 'end'     => $end->timestamp,
             ]);
@@ -174,15 +173,15 @@ class OpenSkyClient
         }
 
         return collect($response->json() ?? [])
-            ->filter(fn(array $f) => $this->looksCommercial($f['callsign'] ?? null))
+            ->filter(fn(array $f) => $this->commercial_maybe($f['callsign'] ?? null))
             ->map(fn(array $f) => [
                 'icao24'           => $f['icao24'],
                 'callsign'         => trim($f['callsign'] ?? ''),
-                'airline'          => AirplaneNames::nameFor($f['callsign'] ?? null),
+                'airline'          => AirlineNames::nameFor($f['callsign'] ?? null),
                 'departureAirport' => AirportNames::cityFor($f['estDepartureAirport']),
                 'arrivalAirport'   => AirportNames::cityFor($f['estArrivalAirport']),
                 'departedAt'       => isset($f['firstSeen'])
-                    ? Carbon::createFromTimestamp($f['firstSeen'], 'UTC')->toDateTimeString() . ' UTC'
+                    ? Carbon::createFromTimestamp($f['firstSeen'], 'UTC')->format('d.M.y H:i') . ' UTC'
                     : null,
             ])
             ->sortByDesc('departedAt')
@@ -193,12 +192,12 @@ class OpenSkyClient
     public function track(string $icao24, int $time = 0): array
     {
         $request = Http::timeout($this->timeout);
-        if ($this->clientId && $this->clientSecret) {
-            $request = $request->withToken($this->accessToken());
+        if ($this->client_id && $this->client_secret) {
+            $request = $request->withToken($this->access_token());
         }
 
         try {
-            $response = $request->get("{$this->baseUrl}/tracks/all", [
+            $response = $request->get("{$this->baseurl}/tracks/all", [
                 'icao24' => strtolower($icao24),
                 'time'   => $time,
             ]);

@@ -6,7 +6,7 @@ use App\Exceptions\PlaneException;
 use App\Services\OpenSky\OpenSkyClient;
 use Illuminate\Http\JsonResponse;
 
-class TrackController extends Controller
+class Maps extends Controller
 {
     public function __construct(private OpenSkyClient $openSky) {}
 

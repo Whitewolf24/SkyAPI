@@ -20,39 +20,37 @@ class AircraftController extends Controller
         $airport = null;
         $arrivals = [];
         $departures = [];
-        $arrivalsError = null;
-        $departuresError = null;
-        $notFoundError = null;
+        $arrivals_error = null;
+        $departures_error = null;
+        $notfound_error = null;
 
         if ($query !== '' && count($matches) === 0) {
-            $notFoundError = "No airport found matching \"{$query}\" — try a city name, IATA code, or ICAO code.";
+            $notfound_error = "No airport found matching \"{$query}\".";
         } elseif (count($matches) === 1) {
             $airport = $matches[0];
 
             try {
-                $rawArrivals = $this->openSky->arrivals($airport['icao']);
-                // Καθαρισμός των κενών από το callsign
-                $arrivals = collect($rawArrivals)->map(function ($flight) {
+                $data_arrivals = $this->openSky->arrivals($airport['icao']);
+                $arrivals = collect($data_arrivals)->map(function ($flight) {
                     if (isset($flight['callsign'])) {
                         $flight['callsign'] = trim($flight['callsign']);
                     }
                     return $flight;
                 })->toArray();
             } catch (PlaneException $e) {
-                $arrivalsError = 'Could not load data right now, probably an API issue, please try again later.';
+                $arrivals_error = 'Could not load data right now, probably an API issue, please try again later.';
             }
 
             try {
-                $rawDepartures = $this->openSky->departures($airport['icao']);
-                // Καθαρισμός των κενών από το callsign
-                $departures = collect($rawDepartures)->map(function ($flight) {
+                $data_departures = $this->openSky->departures($airport['icao']);
+                $departures = collect($data_departures)->map(function ($flight) {
                     if (isset($flight['callsign'])) {
                         $flight['callsign'] = trim($flight['callsign']);
                     }
                     return $flight;
                 })->toArray();
             } catch (PlaneException $e) {
-                $departuresError = 'Could not load departures right now — try again shortly.';
+                $departures_error = 'Could not load data right now, probably an API issue, please try again later.';
             }
         }
 
@@ -62,9 +60,9 @@ class AircraftController extends Controller
             'airport'         => $airport,
             'arrivals'        => $arrivals,
             'departures'      => $departures,
-            'arrivalsError'   => $arrivalsError,
-            'departuresError' => $departuresError,
-            'error'           => $notFoundError,
+            'arrivals_error'   => $arrivals_error,
+            'departures_error' => $departures_error,
+            'error'           => $notfound_error,
         ]);
     }
 }

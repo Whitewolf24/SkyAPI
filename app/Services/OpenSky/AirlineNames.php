@@ -2,12 +2,9 @@
 
 namespace App\Services\OpenSky;
 
-/**
- * Maps a callsign's ICAO airline prefix (first 3 letters, e.g. "SEH" in
- * "SEH123") to a readable airline name — OpenSky only ever returns the
- * raw callsign, never the airline itself.
- */
-class AirplaneNames
+/* Maps callsigns to a readable airline name  */
+
+class AirlineNames
 {
     private const AIRLINES = [
         // Greece
@@ -15,7 +12,7 @@ class AirplaneNames
         'AEE' => 'Aegean Airlines',
         'OAL' => 'Olympic Air',
 
-        // Europe — low-cost & flag carriers
+        // Europe
         'RYR' => 'Ryanair',
         'EZY' => 'easyJet',
         'WZZ' => 'Wizz Air',

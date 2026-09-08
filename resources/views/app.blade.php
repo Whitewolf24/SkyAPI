@@ -4,12 +4,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title inertia>{{ config('app.name', 'Laravel') }}</title>
-
+    <meta name="robots" content="noindex, nofollow">
+    <title inertia>{{ config('app.name', 'SkyAPI') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+
     <link href="/src/style.css" rel="stylesheet">
+
     @inertiaHead
     @routes
     @viteReactRefresh

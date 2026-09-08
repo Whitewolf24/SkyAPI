@@ -2,12 +2,8 @@
 
 namespace App\Services\OpenSky;
 
-/**
- * Lets users search "Athens" instead of memorizing ICAO codes ("LGAV") —
- * OpenSky itself only accepts exact ICAO codes. Not exhaustive; extend
- * as needed. A real global dataset (e.g. OurAirports' public CSV) would
- * replace this if coverage ever needs to grow beyond a curated list.
- */
+/* Lets users search with city names instead of memorizing codes (ie ATH) */
+
 class AirportNames
 {
     private const AIRPORTS = [
@@ -162,8 +158,22 @@ class AirportNames
                     return [$airport];
                 }
             }
-            // Valid ICAO shape but not in our list — let OpenSky try it anyway.
             return [['icao' => $icao, 'iata' => '', 'name' => $icao, 'city' => $icao]];
+        }
+
+        // Typed an IATA code directly (3 letters) — same reasoning: prefer an
+        // exact match over fuzzy substring search, so e.g. "ATH" doesn't also
+        // pull in unrelated airports whose city merely CONTAINS "ath" as a
+        // substring (Karpathos being the actual real-world example of this).
+        if (preg_match('/^[A-Za-z]{3}$/', $query)) {
+            $iata = strtoupper($query);
+            foreach (self::AIRPORTS as $airport) {
+                if ($airport['iata'] === $iata) {
+                    return [$airport];
+                }
+            }
+            // Not a known IATA code — fall through, it might be a genuine
+            // name/city fragment (e.g. someone typing a partial word).
         }
 
         $needle = mb_strtolower($query);
