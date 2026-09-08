@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 
-class TravelPartnerException extends Exception
+class PlaneException extends Exception
 {
     //
 }

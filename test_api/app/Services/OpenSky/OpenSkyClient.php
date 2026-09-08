@@ -4,7 +4,7 @@ namespace App\Services\OpenSky;
 
 use App\Services\OpenSky\AirplaneNames;
 use App\Services\OpenSky\AirportNames;
-use App\Exceptions\TravelPartnerException;
+use App\Exceptions\PlaneException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -39,7 +39,7 @@ class OpenSkyClient
             ]);
         } catch (ConnectionException $e) {
             Log::error('OpenSky arrivals connection failed', ['error' => $e->getMessage()]);
-            throw new TravelPartnerException("Could not reach OpenSky: {$e->getMessage()}");
+            throw new PlaneException("Could not reach OpenSky: {$e->getMessage()}");
         }
 
         if ($response->status() === 404) {
@@ -48,7 +48,7 @@ class OpenSkyClient
 
         if ($response->failed()) {
             Log::warning('OpenSky arrivals request failed', ['status' => $response->status()]);
-            throw new TravelPartnerException("OpenSky error: HTTP {$response->status()}");
+            throw new PlaneException("OpenSky error: HTTP {$response->status()}");
         }
 
         return collect($response->json() ?? [])
@@ -68,7 +68,7 @@ class OpenSkyClient
             ->all();
     }
 
-/////////////
+    /////////////
 
     private function looksCommercial(?string $callsign): bool
     {
@@ -96,12 +96,12 @@ class OpenSkyClient
             $response = $request->get("{$this->baseUrl}/states/all", $bbox ?? []);
         } catch (ConnectionException $e) {
             Log::error('OpenSky connection failed', ['error' => $e->getMessage()]);
-            throw new TravelPartnerException("Could not reach OpenSky: {$e->getMessage()}");
+            throw new PlaneException("Could not reach OpenSky: {$e->getMessage()}");
         }
 
         if ($response->failed()) {
             Log::warning('OpenSky request failed', ['status' => $response->status()]);
-            throw new TravelPartnerException("OpenSky error: HTTP {$response->status()}");
+            throw new PlaneException("OpenSky error: HTTP {$response->status()}");
         }
 
         return array_map(fn(array $s) => [
@@ -118,7 +118,7 @@ class OpenSkyClient
         ], $response->json('states') ?? []);
     }
 
-///////////////
+    ///////////////
 
     private function accessToken(): string
     {
@@ -130,19 +130,19 @@ class OpenSkyClient
                     'client_secret' => $this->clientSecret,
                 ]);
             } catch (ConnectionException $e) {
-                throw new TravelPartnerException("Could not reach OpenSky auth server: {$e->getMessage()}");
+                throw new PlaneException("Could not reach OpenSky auth server: {$e->getMessage()}");
             }
 
             if ($response->failed()) {
-                throw new TravelPartnerException("OpenSky auth failed: HTTP {$response->status()}");
+                throw new PlaneException("OpenSky auth failed: HTTP {$response->status()}");
             }
 
             return $response->json('access_token');
         });
     }
 
-/////////////////
-    
+    /////////////////
+
     public function departures(string $airportIcao): array
     {
         $end = now('UTC')->startOfDay();
@@ -161,7 +161,7 @@ class OpenSkyClient
             ]);
         } catch (ConnectionException $e) {
             Log::error('OpenSky departures connection failed', ['error' => $e->getMessage()]);
-            throw new TravelPartnerException("Could not reach OpenSky: {$e->getMessage()}");
+            throw new PlaneException("Could not reach OpenSky: {$e->getMessage()}");
         }
 
         if ($response->status() === 404) {
@@ -170,7 +170,7 @@ class OpenSkyClient
 
         if ($response->failed()) {
             Log::warning('OpenSky departures request failed', ['status' => $response->status()]);
-            throw new TravelPartnerException("OpenSky error: HTTP {$response->status()}");
+            throw new PlaneException("OpenSky error: HTTP {$response->status()}");
         }
 
         return collect($response->json() ?? [])
@@ -190,7 +190,7 @@ class OpenSkyClient
             ->all();
     }
 
-     public function track(string $icao24, int $time = 0): array
+    public function track(string $icao24, int $time = 0): array
     {
         $request = Http::timeout($this->timeout);
         if ($this->clientId && $this->clientSecret) {
@@ -204,16 +204,16 @@ class OpenSkyClient
             ]);
         } catch (ConnectionException $e) {
             Log::error('OpenSky track connection failed', ['error' => $e->getMessage()]);
-            throw new TravelPartnerException("Could not reach OpenSky: {$e->getMessage()}");
+            throw new PlaneException("Could not reach OpenSky: {$e->getMessage()}");
         }
 
         if ($response->status() === 404) {
-            throw new TravelPartnerException("No track found for aircraft {$icao24}.");
+            throw new PlaneException("No track found for aircraft {$icao24}.");
         }
 
         if ($response->failed()) {
             Log::warning('OpenSky track request failed', ['status' => $response->status()]);
-            throw new TravelPartnerException("OpenSky error: HTTP {$response->status()}");
+            throw new PlaneException("OpenSky error: HTTP {$response->status()}");
         }
 
         $data = $response->json();

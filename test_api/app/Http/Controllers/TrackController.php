@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\TravelPartnerException;
+use App\Exceptions\PlaneException;
 use App\Services\OpenSky\OpenSkyClient;
 use Illuminate\Http\JsonResponse;
 
@@ -18,7 +18,7 @@ class TrackController extends Controller
     {
         try {
             return response()->json($this->openSky->track($icao24));
-        } catch (TravelPartnerException $e) {
+        } catch (PlaneException $e) {
             return response()->json(['error' => 'No track found for this flight.'], 422);
         }
     }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\TravelPartnerException;
+use App\Exceptions\PlaneException;
 use App\Services\OpenSky\AirportNames;
 use App\Services\OpenSky\OpenSkyClient;
 use Inertia\Inertia;
@@ -38,7 +38,7 @@ class AircraftController extends Controller
                     }
                     return $flight;
                 })->toArray();
-            } catch (TravelPartnerException $e) {
+            } catch (PlaneException $e) {
                 $arrivalsError = 'Could not load data right now, probably an API issue, please try again later.';
             }
 
@@ -51,7 +51,7 @@ class AircraftController extends Controller
                     }
                     return $flight;
                 })->toArray();
-            } catch (TravelPartnerException $e) {
+            } catch (PlaneException $e) {
                 $departuresError = 'Could not load departures right now — try again shortly.';
             }
         }
