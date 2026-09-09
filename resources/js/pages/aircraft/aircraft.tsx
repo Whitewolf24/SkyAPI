@@ -58,7 +58,6 @@ function FMap({ track }: { track: Track }) {
 
     return (
         <div>
-            <p>{track.startTime} → {track.endTime}</p>
             <div ref={mapRef} style={{ height: '400px', width: '100%' }} />
         </div>
     );
@@ -125,9 +124,9 @@ function FlightsTable({
                                             <button
                                                 type="button"
                                                 onClick={() => onToggleTrack(rowKey, f.icao24)}
-                                                className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm ${isExpanded ? 'bg-blue-500 bg-opacity-10 border-blue-500 border-opacity-30 text-blue-400 hover:bg-opacity-20' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'}`}
+                                                className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer shadow-sm
+                                                    ${isExpanded ? 'bg-blue-500 bg-opacity-10 border-blue-200 border-opacity-30 hover:bg-opacity-20' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'}`}
                                             >
-                                                {isExpanded && <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span>}
                                                 {isExpanded ? 'Hide Route' : 'View Route'}
                                             </button>
                                         </td>
@@ -145,8 +144,8 @@ function FlightsTable({
                                                             <span>Loading flight path data…</span>
                                                         </div>
                                                     )}
-                                                    {map_error[rowKey] && (
-                                                        <p className="text-sm font-bold text-rose-400 bg-rose-500 bg-opacity-5 px-3 py-1.5 border border-rose-500 border-opacity-20 rounded-lg">⚠️ {map_error[rowKey]}</p>
+                                                    {map_error[rowKey] && !map_data[rowKey] && map_loading !== rowKey && (
+                                                        <p className="text-sm font-bold bg-rose-500 bg-opacity-5 px-3 py-1.5 border border-rose-500 border-opacity-20 rounded-lg"> {map_error[rowKey]}</p>
                                                     )}
                                                     {map_data[rowKey] && (
                                                         <div className="w-full h-full rounded-lg overflow-hidden animate-fade-in">
@@ -330,7 +329,8 @@ export default function Index({ query, matches, airport, arrivals, departures, a
                         <ul className="text-sm font-bold tracking-wide text-center mt-5 space-y-2.5 ">
                             {matches.map((m) => (
                                 <li key={m.icao} className="hover:bg-slate-700 transition-colors rounded-xl shadow-md shadow-blue-500/5">
-                                    <button type="button" onClick={() => router.get('/aircraft', { airport: m.icao }, { preserveState: true })}>                                        {m.name} ({m.iata || m.icao})
+                                    <button type="button" onClick={() => router.get('/aircraft', { airport: m.icao }, { preserveState: true })}>
+                                        {m.name} ({m.iata || m.icao})
                                     </button>
                                 </li>
                             ))}
